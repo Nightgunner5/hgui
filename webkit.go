@@ -56,29 +56,27 @@ static GtkWidget* _new_webkit() {
 
 */
 import "C"
-import "fmt"
 
-func startGui(width, height int, title string, port int) {
-	C.gtk_init(nil, nil) //gtk.Init(nil)
+func startGui(width, height int, title, addr string) {
+	C.gtk_init(nil, nil)
 
-	window := C.window
-	window = C.gtk_window_new(C.GTK_WINDOW_TOPLEVEL)
-	C.gtk_window_set_title(C.to_GtkWindow(window), C.to_gcharptr(C.CString(title)))
-	C.connect_destroy(window)
+	C.window = C.gtk_window_new(C.GTK_WINDOW_TOPLEVEL)
+	C.gtk_window_set_title(C.to_GtkWindow(C.window), C.to_gcharptr(C.CString(title)))
+	C.connect_destroy(C.window)
 
-	vbox := C.gtk_hbox_new(0, 1)
+	box := C.gtk_hbox_new(0, 1)
 
 	C.webview = C._new_webkit()
 
-	C.gtk_container_add(C.to_GtkContainer(vbox), C.webview)
+	C.gtk_container_add(C.to_GtkContainer(box), C.webview)
 
-	C.loadUri(C.webview, C.to_gcharptr(C.CString(fmt.Sprintf("http://127.0.0.1:%d", port))))
+	C.loadUri(C.webview, C.to_gcharptr(C.CString("http://"+addr)))
 
-	C.gtk_container_add(C.to_GtkContainer(window), vbox)
-	C.gtk_widget_set_size_request(window, C.gint(width), C.gint(height))
+	C.gtk_container_add(C.to_GtkContainer(C.window), box)
+	C.gtk_widget_set_size_request(C.window, C.gint(width), C.gint(height))
 
-	C.gtk_widget_show(vbox)
-	C.gtk_widget_show(window) //Window.ShowAll()
+	C.gtk_widget_show(box)
+	C.gtk_widget_show(C.window)
 	C.gtk_widget_show(C.webview)
 
 	/*
@@ -91,25 +89,19 @@ func startGui(width, height int, title string, port int) {
 		}
 	*/
 
-	C.gtk_main() //gtk.GtkMain()
+	C.gtk_main()
 }
 
 func loadHtmlString(webview *C.GtkWidget, content, base_uri string) {
 	pcontent := C.CString(content)
 	defer C.free_string(pcontent)
+
 	pbase_uri := C.CString(base_uri)
 	defer C.free_string(pbase_uri)
+
 	C.loadHtmlString(webview, C.to_gcharptr(pcontent), C.to_gcharptr(pbase_uri))
 }
 
-func jsGetEvents() {
+func emitJSEvents() {
 	C._emit_script()
 }
-
-//=============================================
-//  Statusbar  //
-//=============================================
-
-//=============================================
-//  Window Options  //
-//=============================================

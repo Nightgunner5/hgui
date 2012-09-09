@@ -5,131 +5,115 @@ On execution it opens a browser connecting it to the server.
 package hgui
 
 import (
-	"fmt"
-	"math/rand"
+	"io"
+	"log"
 	"net"
 	"net/http"
-	"os"
+	"sync"
 )
 
-var firstTimeRequest = true
-var DEBUG = false
+var resourceLock sync.RWMutex
+var resources = make(map[string][]byte)
 
-var resources = map[string][]byte{}
+func RegisterResource(path string, data []byte) {
+	resourceLock.Lock()
+	defer resourceLock.Unlock()
 
-//When you compile a file, be it image, or page or whatever, to a []byte, it can be used with this map.
-//when the page is requested on the server, fx. /img/cat.jpg, it will write the bytes in 
-//		hgui.SetResource(map[string][]byte{"/img/cat.jpg", catpicvar})
-//back to the client.
-func SetResource(files map[string][]byte) {
-	resources = files
+	resources[path] = data
 }
 
-var handlers = map[string]func(){} //TODO:THIS HANDLER NEVER GETS CLEANED UP
-var Topframe = &Frame{newWidget(), make([]HTMLer, 0, 20), true}
+// Deprecated. Use RegisterResource.
+func SetResource(files map[string][]byte) {
+	resourceLock.Lock()
+	defer resourceLock.Unlock()
 
-//This starts the server on the specified port. It also runs the mainloop for webkit.
-//It also takes width and heigh + a title for the window to appear in.
-func StartServer(width, height int, title string) { //"127.0.0.1"
-	http.Handle("/", http.HandlerFunc(requests))
-
-	var port int
-	//find port
-	for {
-		port = rand.Intn(40000) + 10000
-		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-
-		err = ln.Close()
-		if err != nil {
-			panic(err)
-		}
-		break
+	for path, data := range files {
+		resources[path] = data
 	}
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
+}
+
+var (
+	handlers = make(map[string]func())
+
+	TopFrame = &Frame{
+		widget:   newWidget(),
+		content:  make([]HTMLer, 0, 20),
+		topframe: true,
+	}
+
+	// Legacy
+	Topframe = TopFrame
+)
+
+func StartServer(width, height int, title string) {
+	// Port 0 is a special case that chooses a random available port
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+	addr := ln.Addr()
 
 	go func() {
-		err := http.ListenAndServe(addr, nil)
+		err := http.Serve(ln, nil)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 	}()
 
-	if DEBUG {
-		fmt.Println(addr)
-		c := make(chan int)
-		<-c
-	}
-	startGui(width, height, title, port)
+	startGui(width, height, title, addr.String())
 }
 
 func requests(w http.ResponseWriter, req *http.Request) {
-	if req.URL.Path == "/events" {
+	query := req.URL.Query()
+
+	switch req.URL.Path {
+	case "/events":
 		eventPoll(w)
-		return
-	}
 
-	println(req.URL.Path)
-	if req.URL.Path == "/reply" {
-		q := req.URL.Query()
-		eventReply(reply{q.Get("Id"), q.Get("Reply")})
-		return
-	}
+	case "/reply":
+		eventReply(reply{query.Get("id"), query.Get("reply")})
 
-	if req.URL.Path == "/handler" {
-		q := req.URL.Query()
-		if f, ok := handlers[q.Get("id")]; ok {
-			f()
+	case "/handler":
+		if handler, ok := handlers[query.Get("id")]; ok {
+			handler()
 		}
-		return
-	}
 
-	if req.URL.Path == "/" {
-		if !firstTimeRequest {
-			os.Exit(0)
-			return
-		}
-		firstTimeRequest = false
-		w.Write(head())
-		w.Write([]byte(Topframe.HTML()))
-		w.Write(bottom())
-		return
-	}
+	case "/":
+		io.WriteString(w, head)
+		io.WriteString(w, TopFrame.HTML())
+		io.WriteString(w, foot)
 
-	if req.URL.Path == "/js" { //<script type="text/javascript" src="/webgui"></script>
-		w.Header().Set("Content-Type", "text/javascript")
-		w.WriteHeader(http.StatusOK)
+	case "/js":
+		w.Header().Set("Content-Type", "application/javascript")
 		w.Write(fileJQuery)
-		w.Write([]byte("\n\n"))
+		io.WriteString(w, "\n\n")
 		w.Write(filecorejs)
-		return
-	}
 
-	b, ok := resources[req.URL.Path]
-	if !ok {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Page Not Found - 404"))
-		return
+	default:
+		resourceLock.RLock()
+		if data, ok := resources[req.URL.Path]; ok {
+			w.Write(data)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			io.WriteString(w, "404 - Not Found")
+		}
+		resourceLock.RUnlock()
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
 }
 
-func head() []byte {
-	return []byte(`<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+func init() {
+	http.HandleFunc("/", requests)
+}
+
+const (
+	head = `<!DOCTYPE html>
 <html>
 <head>
-<script type="text/javascript" src="js"/></script>
+<meta charset="utf-8">
+<script src="js"></script>
 </head>
-`)
-}
-func bottom() []byte {
-	return []byte(`
+`
+	foot = `
 </html>
-`)
-}
+`
+)
