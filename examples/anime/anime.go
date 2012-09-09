@@ -5,21 +5,21 @@ import (
 )
 
 func main() {
-	
+
 	//Setup top Left Cell
 	frame := hgui.NewFrame()
-	listen := hgui.NewSelect(20, false, []hgui.Style{{"width":"150px"}})
-	
+	listen := hgui.NewSelect(20, false, []hgui.Style{{"width": "150px"}})
+
 	frame.Add(
 		hgui.Html("<h3><center>Anime</center></h3>"),
 		listen,
 	)
-	
+
 	//Setup top Right cell
 	txStyle := hgui.Style{
-		"width":"200px",
+		"width": "200px",
 	}
-	
+
 	navn := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
 	udlaant := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
 	antal := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
@@ -27,8 +27,8 @@ func main() {
 	lager := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
 	dato := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
 	gudemappe := hgui.NewTextinput("", hgui.TextType_Text, txStyle)
-	kommentar := hgui.NewTextarea("", hgui.Style{"width":"300px", "height":"130px"})
-	
+	kommentar := hgui.NewTextarea("", hgui.Style{"width": "300px", "height": "130px"})
+
 	innertable := hgui.NewTable(nil,
 		hgui.NewRow(nil,
 			hgui.NewCell(false, 1, 1, hgui.Html("Navn")),
@@ -64,14 +64,13 @@ func main() {
 		hgui.NewRow(nil,
 			hgui.NewCell(false, 2, 1, kommentar),
 		),
-		
 	)
-	
+
 	//setup down left cell
 	sortlist := hgui.NewSelect(0, false, nil,
-		hgui.NewOptions("Sort by anime", "sort by id", "sort by dato")...
+		hgui.NewOptions("Sort by anime", "sort by id", "sort by dato")...,
 	)
-	
+
 	//setup down right cell
 	buttonframe := hgui.NewFrame()
 	buttonframe.Add(
@@ -88,23 +87,22 @@ func main() {
 			//do stuff
 		}),
 	)
-	
+
 	//Setup Table
 	table := hgui.NewTable(
 		[]hgui.Style{
-			{"border-width": "1px", "border-style":"solid", "margin": "auto", "background-color":"white"},
+			{"border-width": "1px", "border-style": "solid", "margin": "auto", "background-color": "white"},
 		},
 		hgui.NewRow(nil,
-			hgui.NewCell(false, 1, 1, frame, hgui.Style{"width":"200px", "text-align":"center"}),
-			hgui.NewCell(false, 1, 1, innertable, hgui.Style{"vertical-align":"top"}),
+			hgui.NewCell(false, 1, 1, frame, hgui.Style{"width": "200px", "text-align": "center"}),
+			hgui.NewCell(false, 1, 1, innertable, hgui.Style{"vertical-align": "top"}),
 		),
 		hgui.NewRow(nil,
-			hgui.NewCell(false, 1, 1, sortlist, hgui.Style{"text-align":"center"}),
-			hgui.NewCell(false, 1, 1, buttonframe, hgui.Style{"text-align":"right"}),
+			hgui.NewCell(false, 1, 1, sortlist, hgui.Style{"text-align": "center"}),
+			hgui.NewCell(false, 1, 1, buttonframe, hgui.Style{"text-align": "right"}),
 		),
-	
 	)
 	hgui.Topframe.Add(table)
 	hgui.Topframe.AddStyle(hgui.Css_bgcolor("green"))
 	hgui.StartServer(600, 450, "Anime Manager")
-} 
+}

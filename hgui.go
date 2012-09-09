@@ -12,12 +12,11 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
-	"runtime"
 )
-
 
 //=============================================
 //  Variable Declartions  //
@@ -76,7 +75,7 @@ var (
 //=============================================
 
 func Css_bgcolor(color string) Style {
-	return Style{"background-color":color}
+	return Style{"background-color": color}
 }
 
 var (
@@ -141,7 +140,7 @@ func eventReply(r reply) {
 			return
 		}
 		replyqueue <- v
-	}	
+	}
 }
 
 //Sends and Event to the browser
@@ -265,7 +264,7 @@ func newWidget(styles ...Style) *widget {
 	for _, s := range styles {
 		style.AddStyle(s)
 	}
-	w := &widget{id:ids.New("id")}
+	w := &widget{id: ids.New("id")}
 	w.SetStyle(style)
 	runtime.SetFinalizer(w, func(last *widget) {
 		ids.Remove(last.id)
@@ -341,7 +340,7 @@ func (w *widget) SetEvent(event evtType, action func()) {
 
 type Frame struct {
 	*widget
-	content []HTMLer
+	content  []HTMLer
 	topframe bool
 }
 
@@ -368,7 +367,7 @@ func (f *Frame) Flip() {
 func (f *Frame) HTML() string {
 	buf := make([]string, len(f.content))
 	for i, v := range f.content {
-		buf[i] = v.HTML()+"\n"
+		buf[i] = v.HTML() + "\n"
 	}
 	if f.topframe {
 		return fmt.Sprintf(`<body id="%s" style="%s">%s</body>`, f.id, f.style.Marshal(), strings.Join(buf, ""))
@@ -450,14 +449,13 @@ func (t *Table) Addrows(r ...*Row) {
 }
 
 func (t *Table) HTML() (html string) {
-	html = `<table id="` + t.id + `" style="`+t.style.Marshal()+`">`
+	html = `<table id="` + t.id + `" style="` + t.style.Marshal() + `">`
 	for _, v := range t.rows {
-		html += v.HTML()+"\n"
+		html += v.HTML() + "\n"
 	}
 	html += "</table>"
 	return
 }
-
 
 //you put this into your table/grid. It's a row.
 type Row struct {
@@ -474,9 +472,9 @@ func (r *Row) AddCells(c ...*Cell) {
 }
 
 func (r *Row) HTML() (html string) {
-	html = `<tr id="` + r.id + `" style="`+r.style.Marshal()+`">`
+	html = `<tr id="` + r.id + `" style="` + r.style.Marshal() + `">`
 	for _, v := range r.cells {
-		html += v.HTML()+"\n"
+		html += v.HTML() + "\n"
 	}
 	html += "</tr>"
 	return
@@ -522,7 +520,7 @@ type Textinput struct {
 }
 
 //Creates a inpup field for text
-func NewTextinput(value string, ttype texttype,styles ...Style) *Textinput {
+func NewTextinput(value string, ttype texttype, styles ...Style) *Textinput {
 	return &Textinput{newWidget(styles...), value, string(ttype)}
 }
 
@@ -569,7 +567,7 @@ func (t *Textarea) SetValue(s string) {
 }
 
 func (t *Textarea) HTML() string {
-	return `<textarea id="` + t.id + `" style="`+t.style.Marshal()+`">`+t.value+`</textarea>`
+	return `<textarea id="` + t.id + `" style="` + t.style.Marshal() + `">` + t.value + `</textarea>`
 }
 
 //=============================================
@@ -578,7 +576,7 @@ func (t *Textarea) HTML() string {
 
 type Radiocheckbox struct {
 	*widget
-	group   string
+	group    string
 	radiobox bool
 }
 
@@ -641,7 +639,7 @@ func (i *Image) HTML() string {
 //List are bullet points or numbered lists.
 type List struct {
 	*widget
-	items []*Listitem
+	items   []*Listitem
 	ordered bool
 }
 
@@ -664,11 +662,11 @@ func (l *List) HTML() (html string) {
 	} else {
 		html = fmt.Sprintf(`<ul id="%s" style="%s">`, l.id, l.style.Marshal())
 	}
-	
+
 	for _, v := range l.items {
-		html += v.HTML()+"\n"
+		html += v.HTML() + "\n"
 	}
-	
+
 	if l.ordered {
 		html += "</ol>"
 	} else {
@@ -748,7 +746,7 @@ func (s *Selectform) HTML() (html string) {
 		html = fmt.Sprintf(`<select id="%s" size="%d" style="%s">`, s.id, s.size, s.style.Marshal())
 	}
 	for _, v := range s.options {
-		html += v.HTML()+"\n"
+		html += v.HTML() + "\n"
 	}
 	html += "</select>"
 	return
@@ -803,20 +801,20 @@ func (o *Option) HTML() string {
 type Modal struct {
 	*widget
 	content HTMLer
-	width int
-	height int
+	width   int
+	height  int
 }
 
 func NewModal(width, height int) *Modal {
 	s := Style{
-		"display": "none",
-		"position": "absolute",
-		"left": "0px",
-		"top": "0px",
-		"width":"100%",
-		"height":"100%",
-		"text-align":"center",
-		"z-index": "1000",
+		"display":    "none",
+		"position":   "absolute",
+		"left":       "0px",
+		"top":        "0px",
+		"width":      "100%",
+		"height":     "100%",
+		"text-align": "center",
+		"z-index":    "1000",
 		"background": "rgba(0, 0, 0, 0.6)",
 	}
 	return &Modal{newWidget(s), Html(""), width, height}
@@ -828,16 +826,16 @@ func (m *Modal) SetContent(content HTMLer) {
 
 func (m *Modal) HTML() string {
 	underlaystyle := Style{
-		"width": fmt.Sprintf("%dpx", m.width),
-		"height": fmt.Sprintf("%dpx", m.height),
-		"margin": "20% auto",
+		"width":            fmt.Sprintf("%dpx", m.width),
+		"height":           fmt.Sprintf("%dpx", m.height),
+		"margin":           "20% auto",
 		"background-color": "white",
-		"border":"1px solid #000",
-		"padding":"15px",
-		"text-align":"center",
+		"border":           "1px solid #000",
+		"padding":          "15px",
+		"text-align":       "center",
 	}
 	return fmt.Sprintf(`<div style="%s" id="%s"><div style="%s">%s</div></div>`,
-	m.style.Marshal(), m.id, underlaystyle.Marshal(), m.content.HTML())
+		m.style.Marshal(), m.id, underlaystyle.Marshal(), m.content.HTML())
 }
 
 //=============================================
@@ -856,7 +854,7 @@ type Gauge struct {
 }
 
 func NewGauge(value, width int, color string) *Gauge {
-	s := Style{"border":"black solid 1px", "vertical-align": "middle"}
+	s := Style{"border": "black solid 1px", "vertical-align": "middle"}
 	g := &Gauge{newWidget(s), value, width, color}
 	g.SetValue(value)
 	return g
@@ -864,8 +862,10 @@ func NewGauge(value, width int, color string) *Gauge {
 
 func (g *Gauge) SetValue(pct int) {
 	switch {
-	case pct > 100: pct = 100
-	case pct < 0: pct = 0
+	case pct > 100:
+		pct = 100
+	case pct < 0:
+		pct = 0
 	}
 	js := fmt.Sprintf(`
 	canvas = document.getElementById("%s");
@@ -885,7 +885,6 @@ func (g *Gauge) Value() int {
 func (g *Gauge) HTML() string {
 	return fmt.Sprintf(`<canvas id="%s" width="%d" height="20" style="%s"></canvas>`, g.id, g.width, g.style)
 }
-
 
 //=============================================
 //  Treecontrol  //
@@ -936,4 +935,3 @@ func Html(value string) HTMLer {
 func Alert(s string) {
 	events <- Event("alert("+escape(s)+");", nil)
 }
-

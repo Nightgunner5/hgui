@@ -40,17 +40,17 @@ static void _emit_script() {
 
 
 static GtkWidget* _new_webkit() {
-	
+
 	GtkWidget* ww = webkit_web_view_new();
-	
+
 	g_signal_new("send-script",
              G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST,
              0, NULL, NULL,
              g_cclosure_marshal_VOID__POINTER,
              G_TYPE_NONE, 1, G_TYPE_POINTER);
-    
+
 	gtk_signal_connect(GTK_OBJECT(ww), "send-script", G_CALLBACK(scriptEvent), NULL);
-	
+
 	return ww;
 }
 
@@ -58,41 +58,40 @@ static GtkWidget* _new_webkit() {
 import "C"
 import "fmt"
 
-
 func startGui(width, height int, title string, port int) {
-	C.gtk_init(nil, nil); //gtk.Init(nil)
-	
+	C.gtk_init(nil, nil) //gtk.Init(nil)
+
 	window := C.window
 	window = C.gtk_window_new(C.GTK_WINDOW_TOPLEVEL)
 	C.gtk_window_set_title(C.to_GtkWindow(window), C.to_gcharptr(C.CString(title)))
 	C.connect_destroy(window)
 
 	vbox := C.gtk_hbox_new(0, 1)
-	
+
 	C.webview = C._new_webkit()
-	
-	C.gtk_container_add(C.to_GtkContainer(vbox), C.webview);
+
+	C.gtk_container_add(C.to_GtkContainer(vbox), C.webview)
 
 	C.loadUri(C.webview, C.to_gcharptr(C.CString(fmt.Sprintf("http://127.0.0.1:%d", port))))
 
 	C.gtk_container_add(C.to_GtkContainer(window), vbox)
 	C.gtk_widget_set_size_request(window, C.gint(width), C.gint(height))
-	
-	C.gtk_widget_show(vbox);
-	C.gtk_widget_show(window); //Window.ShowAll()
-    C.gtk_widget_show(C.webview);
+
+	C.gtk_widget_show(vbox)
+	C.gtk_widget_show(window) //Window.ShowAll()
+	C.gtk_widget_show(C.webview)
 
 	/*
-	This only matters if proxy is stupid!
-	proxy := os.Getenv("HTTP_PROXY")
-	if len(proxy) > 0 {
-		ptr := C.CString(uri)
-		C.proxyshit(ptr)
-		C.free(ptr)
-	}
+		This only matters if proxy is stupid!
+		proxy := os.Getenv("HTTP_PROXY")
+		if len(proxy) > 0 {
+			ptr := C.CString(uri)
+			C.proxyshit(ptr)
+			C.free(ptr)
+		}
 	*/
-	
-	C.gtk_main(); //gtk.GtkMain()
+
+	C.gtk_main() //gtk.GtkMain()
 }
 
 func loadHtmlString(webview *C.GtkWidget, content, base_uri string) {
